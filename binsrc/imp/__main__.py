@@ -97,7 +97,7 @@ def do_initialize():
     subprocess.run(['systemctl', 'import-environment', 'WSL_INTEROP'])
 
     # Run wait-forever subprocess.
-    subprocess.Popen(['/usr/lib/bottle-imp/wait-forever.sh'],
+    subprocess.Popen(['/usr/local/lib/bottle-imp/wait-forever.sh'],
                      stdin=subprocess.DEVNULL,
                      stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL,

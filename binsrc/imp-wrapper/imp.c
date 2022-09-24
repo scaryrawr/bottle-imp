@@ -26,7 +26,7 @@ int main(int argc, char ** argv)
         setreuid(geteuid(), geteuid());
 
         /* Attempt to execute script */
-        execv("/usr/lib/bottle-imp/imp", argv);
+        execv("/usr/local/lib/bottle-imp/imp", argv);
         // execv("/bin/sh", argv);
 
         /* Reach here if execv failed */

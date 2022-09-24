@@ -11,10 +11,11 @@ THIS_FILE := $(lastword $(MAKEFILE_LIST))
 
 # The values of these variables depend upon DESTDIR, set in the recursive call to
 # the internal-package target.
-INSTALLDIR = $(DESTDIR)/usr/lib/bottle-imp
-BINDIR = $(DESTDIR)/usr/bin
-SVCDIR = $(DESTDIR)/usr/lib/systemd/system
-USRLIBDIR = $(DESTDIR)/usr/lib
+DESTDIR = /usr/local
+INSTALLDIR = $(DESTDIR)/lib/bottle-imp
+BINDIR = $(DESTDIR)/bin
+SVCDIR = $(DESTDIR)/lib/systemd/system
+USRLIBDIR = $(DESTDIR)/lib
 
 #
 # Default target: list options
@@ -67,12 +68,21 @@ clean-debian:
 
 internal-debian-package:
 	mkdir -p debian/bottle-imp
-	@$(MAKE) -f $(THIS_FILE) DESTDIR=debian/bottle-imp internal-package
+	@$(MAKE) -f $(THIS_FILE) DESTDIR=debian/bottle-imp/usr internal-package
 
 # We can assume DESTDIR is set, due to how the following are called.
 
-internal-package:
 
+# We can assume DESTDIR is set, due to how the following are called.
+
+internal-systemd:
+	install -Dm 0755 -o root "othersrc/scripts/map-user-runtime-dir.sh" -t "$(INSTALLDIR)"
+	install -Dm 0755 -o root "othersrc/scripts/unmap-user-runtime-dir.sh" -t "$(INSTALLDIR)"
+
+	# Unit override files.
+	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/user-runtime-dir@.service.d/override.conf" -t "$(SVCDIR)/user-runtime-dir@.service.d"
+
+internal-package: internal-systemd
 	# binaries
 	mkdir -p "$(BINDIR)"
 	install -Dm 6755 -o root "binsrc/imp-wrapper/imp" -t "$(BINDIR)"
@@ -80,11 +90,7 @@ internal-package:
 
 	# Runtime dir mapping
 	install -Dm 0755 -o root "othersrc/scripts/wait-forever.sh" -t "$(INSTALLDIR)"
-	install -Dm 0755 -o root "othersrc/scripts/map-user-runtime-dir.sh" -t "$(INSTALLDIR)"
-	install -Dm 0755 -o root "othersrc/scripts/unmap-user-runtime-dir.sh" -t "$(INSTALLDIR)"
 
-	# Unit override files.
-	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/user-runtime-dir@.service.d/override.conf" -t "$(SVCDIR)/user-runtime-dir@.service.d"
 
 	# binfmt.d
 	install -Dm 0644 -o root "othersrc/usr-lib/binfmt.d/WSLInterop.conf" -t "$(USRLIBDIR)/binfmt.d"
