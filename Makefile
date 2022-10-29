@@ -3,7 +3,7 @@
 #
 
 # Bottle-Imp version
-IMPVERSION = 0.8
+IMPVERSION = 0.9
 
 # Determine this makefile's path.
 # Be sure to place this BEFORE `include` directives, if any.
@@ -159,6 +159,9 @@ clean-arch:
 internal-systemd:
 	# Unit override files.
 	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/user-runtime-dir@.service.d/override.conf" -t "$(SVCDIR)/user-runtime-dir@.service.d"
+
+	# Runtime dir mapping and waiting
+	install -Dm 0755 -o root "othersrc/scripts/imp-user-runtime-dir.sh" -t "$(INSTALLDIR)"
 
 	# Systemd-as-container compensation services.
 	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/pstorefs.service" -T "$(SVCDIR)/pstorefs.service"
