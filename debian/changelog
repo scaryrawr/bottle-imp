@@ -1,8 +1,38 @@
+bottle-imp (0.13) buster bullseye bookworm sid focal jammy; urgency=medium
+
+        * bump
+
+ -- Alistair Young <avatar@arkane-systems.net>  Tue, 1 Nov 2022 09:00:01 -0500
+
+bottle-imp (0.12) buster bullseye bookworm sid focal jammy; urgency=medium
+
+        * Fix issue breaking -s and -c on systemd < 250 (fixes #28).
+        * Add configuration file for timeouts.
+
+ -- Alistair Young <avatar@arkane-systems.net>  Tue, 1 Nov 2022 09:00:00 -0500
+
+bottle-imp (0.11) buster bullseye bookworm sid focal jammy; urgency=medium
+
+        * Added various environment variables to the passthrough list.
+        * Pass through Windows Terminal variables on shell/command.
+        * Add shutdown helper command.
+        * Added bugs section to documentation.
+
+ -- Alistair Young <avatar@arkane-systems.net>  Mon, 31 Oct 2022 15:00:00 -0500
+
+bottle-imp (0.10) buster bullseye bookworm sid focal jammy; urgency=medium
+
+        * Added fix for /dev/shm / /run/shm inversion.
+        * Renamed systemd services with imp- prefix.
+        * Updated documentation.
+
+ -- Alistair Young <avatar@arkane-systems.net>  Sat, 29 Oct 2022 19:00:00 -0500
+
 bottle-imp (0.9) buster bullseye bookworm sid focal jammy; urgency=medium
 
         * Handle user runtime directories other than uid=1000.
 
- -- Alistair Young <avatar@arkane-systems.net>  Fri, 24 Oct 2022 14:00:00 -0500
+ -- Alistair Young <avatar@arkane-systems.net>  Mon, 24 Oct 2022 14:00:00 -0500
 
 bottle-imp (0.8) buster bullseye bookworm sid focal jammy; urgency=medium
 

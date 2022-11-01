@@ -7,10 +7,11 @@ import subprocess
 import sys
 import time
 
+import configuration
 import helpers
 
 # Global variables
-version = "0.9"
+version = "0.13"
 
 verbose = False
 login = None
@@ -47,6 +48,8 @@ def parse_command_line():
                        help='open a login prompt for a systemd user session')
     group.add_argument(
         '-c', '--command', help='open or connect to a systemd user session, and run the specified command in it\n(preserves working directory)', nargs=argparse.REMAINDER)
+    group.add_argument('-u', '--shutdown', action='store_true',
+                       help='shut down systemd and the WSL instance')
 
     return parser.parse_args()
 
@@ -61,7 +64,7 @@ def wait_for_systemd():
         # wait for it
         print("imp: dbus is not available yet, please wait...", end="", flush=True)
 
-        timeout = 240 # hardcode this for now
+        timeout = configuration.dbus_timeout()
 
         while not os.path.exists('/run/dbus/system_bus_socket'):
             time.sleep(1)
@@ -84,7 +87,7 @@ def wait_for_systemd():
         # wait for it
         print("imp: systemd is starting up, please wait...", end="", flush=True)
 
-        timeout = 240 # hardcode this for now
+        timeout = configuration.systemd_timeout()
 
         while ('running' not in state and 'degraded' not in state) and timeout > 0:
             time.sleep(1)
@@ -101,6 +104,7 @@ def wait_for_systemd():
 
     if 'degraded' in state:
         print('imp: WARNING: systemd is in degraded state, issues may occur!')
+        print('imp: check for failed units with "systemctl --failed".')
 
     if not ('running' in state or 'degraded' in state):
         sys.exit("imp: systemd in unsupported state '"
@@ -113,7 +117,8 @@ def do_initialize():
     wait_for_systemd()
 
     # Update the base environment with interop-fu.
-    subprocess.run(['systemctl', 'import-environment', 'WSL_INTEROP'])
+    subprocess.run(['systemctl', 'import-environment',
+        'WSL_INTEROP', 'WSL2_GUI_APPS_ENABLED', 'WSL_DISTRO_NAME', 'WSLENV', 'NAME', 'HOSTTYPE'])
 
     # Run wait-forever subprocess.
     subprocess.Popen(['/usr/local/lib/bottle-imp/wait-forever.sh'],
@@ -128,6 +133,7 @@ def do_initialize():
     # Exit
     sys.exit(0)
 
+
 def do_login():
     """Start a systemd login prompt."""
     wait_for_systemd()
@@ -141,6 +147,7 @@ def do_login():
     os.execv ('/usr/bin/machinectl', ['machinectl', 'login', '.host'])
     # never get here
 
+
 def do_shell():
     """Start/connect to a systemd user session with a shell."""
     wait_for_systemd()
@@ -151,8 +158,17 @@ def do_shell():
     if verbose:
         print("imp: starting shell")
 
-    os.execv ('/usr/bin/machinectl', ['machinectl', 'shell', '-q', login + '@.host'])
+    if helpers.get_in_windows_terminal():
+        os.execv ('/usr/bin/machinectl', ['machinectl',
+            '-E', 'WT_SESSION=' + os.environ['WT_SESSION'],
+            '-E', 'WT_PROFILE_ID=' + os.environ['WT_PROFILE_ID'],
+            'shell', '-q', login + '@.host'])
+    else:
+        os.execv ('/usr/bin/machinectl', ['machinectl',
+            'shell', '-q', login + '@.host'])
+    
     # never get here
+
 
 def do_command(commandline):
     """Start/connect to a systemd user session with a command."""
@@ -167,9 +183,27 @@ def do_command(commandline):
     if len(commandline) == 0:
         sys.exit("imp: no command specified")
 
-    command = ['machinectl', 'shell', '-q', login + '@.host', '/usr/bin/env', '-C', os.getcwd()] + commandline;
+    if helpers.get_in_windows_terminal():
+        command = ['machinectl',
+            '-E', 'WT_SESSION=' + os.environ['WT_SESSION'],
+            '-E', 'WT_PROFILE_ID=' + os.environ['WT_PROFILE_ID'],
+            'shell', '-q', login + '@.host', '/usr/bin/env', '-C', os.getcwd()] + commandline;
+    else:
+        command = ['machinectl',
+            'shell', '-q', login + '@.host', '/usr/bin/env', '-C', os.getcwd()] + commandline;
 
     os.execv ('/usr/bin/machinectl', command)
+
+
+def do_shutdown():
+    """Shut down systemd and the WSL instance."""
+    wait_for_systemd()
+
+    if verbose:
+        print ("imp: shutting down WSL instance")
+
+    os.execv('/usr/bin/systemctl', ['systemctl', 'poweroff'])
+
 
 # Entrypoint
 def entrypoint():
@@ -178,6 +212,7 @@ def entrypoint():
     global login
 
     helpers.prelaunch_checks()
+    configuration.load()
     arguments = parse_command_line()
 
     # Set globals.
@@ -207,6 +242,8 @@ def entrypoint():
         do_shell()
     elif arguments.login:
         do_login()
+    elif arguments.shutdown:
+        do_shutdown()
     elif arguments.command is not None:
         do_command(arguments.command)
     else:

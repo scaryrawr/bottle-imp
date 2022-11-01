@@ -20,10 +20,12 @@ article here.
 The following features are provided by _bottle-imp_ (see the above article for more in-depth explanations):
 
   * Ensures that _securityfs_ (needed for AppArmor and LSMs) and _pstorefs_ (for debugging panics) are mounted.
-  * Ensures that the symlink of `/tmp/.X11-unix/X0`, which makes WSLg work, is restored after _systemd_ clears out `/tmp`.
+  * Ensures that the shared memory area filesystem is mounted at _/dev/shm_ and _/run/shm_, not vice versa.
+  * Ensures that the root file system is mounted with shared propagation.
+  * Ensures that the bind mount of `/tmp/.X11-unix/X0`, which makes WSLg work, is restored after _systemd_ clears out `/tmp`.
   * Ensures that WSL interop is working, even after _systemd_ rebuilds the binfmts.
+  * Ensures that the WSLg-created user runtime directory is mounted for the appropriate user, and is not mounted for other users.
   * Makes sure _systemd_ is up and running before proceeding.
-  * Mounts the WSLg-created user runtime directory over the _systemd_ user runtime directory, ensuring everything's in the right place.
   * Keeps the WSL instance running even when you have no active sessions.
 
 and the big one
@@ -96,7 +98,8 @@ commands:
   -s, --shell           open or connect to a systemd user session, and run a shell in it
   -l, --login           open a login prompt for a systemd user session
   -c ..., --command ...
-                        open or connect to a systemd user session, and run the specified command in it (preserves working directory)
+                        open or connect to a systemd user session, and run the specified command within it (preserves working directory)
+  -u, --shutdown        shut down systemd and the WSL instance
 
 For more information, see https://github.com/arkane-systems/bottle-imp/
 ```
@@ -116,3 +119,30 @@ _imp -c [command]_ runs _command_ inside a _systemd_ login session, then exits. 
 With either of the above, the _imp -a [user]_ option may be used to specify a particular user to start a shell for, or to run a command as, rather than using the currently logged-in user. For example, _imp -a bongo -s_ would start a shell as the user _bongo_.
 
 _imp -l_ opens a login prompt. This permits you to log in to the WSL distribution via _systemd_ as any user. The login prompt will return when you log out; to terminate the session, press `^]` three times within one second. It follows _login_ semantics, and as such does not preserve the current working directory.
+
+_imp -u_ will shut down _systemd_ cleanly and exit the WSL instance. This uses the _systemctl poweroff_ command to
+simulate a normal Linux system shutting down. It is suggested that this be used before shutting down the Windows machine or force-terminating WSL to ensure a clean shutdown of _systemd_ services.
+
+Shutting down the WSL instance in this way causes it to exit completely. You should wait for the instance to show as stopped before attempting to restart it or execute further commands inside it.
+
+### Configuration file
+
+While one is not supplied by default, a configuration file can be created at `/etc/imp.ini`, with contents similar to the following:
+
+```
+[imp]
+dbus-timeout=240
+systemd-timeout=240
+```
+
+The _*-timeout_ settings control how long _imp_ will wait for the system dbus socket to be available, and how long, once it is, _imp_ will wait for _systemd_ to enter either the running or degraded state before giving up. Under normal circumstances, there is no need to set either of these, since _imp_ will move immediately to the next state when it is ready. However, if engaged in extensive _systemd_ debugging or if one is using a particularly slow machine, these timeouts can be controlled here.
+
+## BUGS
+
+1. Using _imp_ to create a session is required for the user login session (and its concomitants, such as a user _systemd_ instance and a session dbus) to be created properly. Simply starting a process with _wsl_ (or using a Linux GUI app shortcut) does not do this, although the problem is less serious than with _genie_, since the process will still be started with _systemd_ as pid 1.
+
+For information about starting Visual Studio Code remote sessions in login sessions, see https://github.com/arkane-systems/bottle-imp/discussions/19 .
+
+2. While the Windows Terminal environment variables, WT_SESSION and WT_PROFILE_ID, will be passed through to shell and command prompt invocations of _imp_, they will not be passed through to login sessions created with _imp -l_, due to a limitation in _machinectl_.
+
+3. _imp_ requires the python package _psutil_, which due to technical limitations of _zipapp_ can't be wrapped into the _imp_ executable. As such, _imp_ depends on this package for the system _python_. If you are inside another python environment, _imp_ may fail unless you install the _psutil_ package into this environment also.
