@@ -172,7 +172,12 @@ internal-systemd:
 	# WSLg mount file
 	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/imp-wslg-socket.service" -T "$(SVCDIR)/imp-wslg-socket.service"
 
-internal-package: internal-systemd
+internal-binfmt:
+	# binfmt.d
+	install -Dm 0644 -o root "othersrc/usr-lib/binfmt.d/WSLInterop.conf" -t "$(USRLIBDIR)/binfmt.d"
+
+
+internal-package: internal-systemd internal-binfmt
 	# binaries
 	mkdir -p "$(BINDIR)"
 	install -Dm 6755 -o root "binsrc/imp-wrapper/imp" -t "$(BINDIR)"
@@ -181,8 +186,6 @@ internal-package: internal-systemd
 	# Runtime dir mapping
 	install -Dm 0755 -o root "othersrc/scripts/wait-forever.sh" -t "$(INSTALLDIR)"
 
-	# binfmt.d
-	install -Dm 0644 -o root "othersrc/usr-lib/binfmt.d/WSLInterop.conf" -t "$(USRLIBDIR)/binfmt.d"
 
 internal-clean:
 	make -C binsrc clean
