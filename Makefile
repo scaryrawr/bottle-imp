@@ -172,6 +172,17 @@ internal-systemd:
 	# WSLg mount file
 	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/imp-wslg-socket.service" -T "$(SVCDIR)/imp-wslg-socket.service"
 
+	mkdir -p "$(ETCSVCDIR)/sysinit.target.wants"
+	ln -sr $(SVCDIR)/imp-fixshm.service $(ETCSVCDIR)/sysinit.target.wants/imp-fixshm.service
+	ln -sr $(SVCDIR)/imp-pstorefs.service $(ETCSVCDIR)/sysinit.target.wants/imp-pstorefs.service
+	ln -sr $(SVCDIR)/imp-securityfs.service $(ETCSVCDIR)/sysinit.target.wants/imp-securityfs.service
+	ln -sr $(SVCDIR)/imp-remount-root-shared.service $(ETCSVCDIR)/sysinit.target.wants/imp-remount-root-shared.service
+
+	mkdir -p "$(ETCSVCDIR)/multi-user.target.wants"
+	ln -sr $(SVCDIR)/imp-wslg-socket.service $(ETCSVCDIR)/multi-user.target.wants/imp-wslg-socket.service
+	ln -sr $(SVCDIR)/systemd-machined.service $(ETCSVCDIR)/multi-user.target.wants/systemd-machined.service
+
+
 internal-binfmt:
 	# binfmt.d
 	install -Dm 0644 -o root "othersrc/usr-lib/binfmt.d/WSLInterop.conf" -t "$(USRLIBDIR)/binfmt.d"
@@ -215,16 +226,6 @@ internal-supplement:
 
 	mkdir -p $(MAN8DIR)
 	install -Dm 0644 -o root "$(TMPBUILDDIR)/imp.8.gz" -t $(MAN8DIR)
-
-	mkdir -p "$(ETCSVCDIR)/sysinit.target.wants"
-	ln -sr $(SVCDIR)/imp-fixshm.service $(ETCSVCDIR)/sysinit.target.wants/imp-fixshm.service
-	ln -sr $(SVCDIR)/imp-pstorefs.service $(ETCSVCDIR)/sysinit.target.wants/imp-pstorefs.service
-	ln -sr $(SVCDIR)/imp-securityfs.service $(ETCSVCDIR)/sysinit.target.wants/imp-securityfs.service
-	ln -sr $(SVCDIR)/imp-remount-root-shared.service $(ETCSVCDIR)/sysinit.target.wants/imp-remount-root-shared.service
-
-	mkdir -p "$(ETCSVCDIR)/multi-user.target.wants"
-	ln -sr $(SVCDIR)/imp-wslg-socket.service $(ETCSVCDIR)/multi-user.target.wants/imp-wslg-socket.service
-	ln -sr $(SVCDIR)/systemd-machined.service $(ETCSVCDIR)/multi-user.target.wants/systemd-machined.service
 
 	# Cleanup temporary directory
 	rm -rf $(TMPBUILDDIR)
