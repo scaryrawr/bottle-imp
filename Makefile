@@ -157,12 +157,6 @@ clean-arch:
 # We can assume DESTDIR is set, due to how the following are called.
 
 internal-systemd:
-	# Unit override files.
-	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/user-runtime-dir@.service.d/override.conf" -t "$(SVCDIR)/user-runtime-dir@.service.d"
-
-	# Runtime dir mapping and waiting
-	install -Dm 0755 -o root "othersrc/scripts/imp-user-runtime-dir.sh" -t "$(INSTALLDIR)"
-
 	# Systemd-as-container compensation services.
 	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/imp-fixshm.service" -T "$(SVCDIR)/imp-fixshm.service"
 	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/imp-pstorefs.service" -T "$(SVCDIR)/imp-pstorefs.service"
