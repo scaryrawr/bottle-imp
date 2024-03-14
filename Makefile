@@ -18,9 +18,9 @@ SVCDIR = $(DESTDIR)/lib/systemd/system
 USRLIBDIR = $(DESTDIR)/lib
 
 # used only by TAR installer
-MAN8DIR = $(DESTDIR)/usr/share/man/man8
-DOCDIR = $(DESTDIR)/usr/share/doc/bottle-imp
-ETCSVCDIR = $(DESTDIR)/etc/systemd/system
+MAN8DIR = $(DESTDIR)/share/man/man8
+DOCDIR = $(DESTDIR)/share/doc/bottle-imp
+ETCSVCDIR = /etc/systemd/system
 
 #
 # Default target: list options
@@ -166,15 +166,12 @@ internal-systemd:
 	# WSLg mount file
 	install -Dm 0644 -o root "othersrc/usr-lib/systemd/system/imp-wslg-socket.service" -T "$(SVCDIR)/imp-wslg-socket.service"
 
-	mkdir -p "$(ETCSVCDIR)/sysinit.target.wants"
-	ln -sr $(SVCDIR)/imp-fixshm.service $(ETCSVCDIR)/sysinit.target.wants/imp-fixshm.service
-	ln -sr $(SVCDIR)/imp-pstorefs.service $(ETCSVCDIR)/sysinit.target.wants/imp-pstorefs.service
-	ln -sr $(SVCDIR)/imp-securityfs.service $(ETCSVCDIR)/sysinit.target.wants/imp-securityfs.service
-	ln -sr $(SVCDIR)/imp-remount-root-shared.service $(ETCSVCDIR)/sysinit.target.wants/imp-remount-root-shared.service
+	systemctl enable imp-fixshm.service
+	systemctl enable imp-pstorefs.service
+	systemctl enable imp-securityfs.service
+	systemctl enable imp-remount-root-shared.service
 
-	mkdir -p "$(ETCSVCDIR)/multi-user.target.wants"
-	ln -sr $(SVCDIR)/imp-wslg-socket.service $(ETCSVCDIR)/multi-user.target.wants/imp-wslg-socket.service
-	ln -sr $(SVCDIR)/systemd-machined.service $(ETCSVCDIR)/multi-user.target.wants/systemd-machined.service
+	systemctl enable imp-wslg-socket.service
 
 
 internal-binfmt:
